@@ -21,6 +21,8 @@ As long as the add-on is enabled, you can use the keyboard shortcut (CTRL-SHIFT-
 
 You can change the keyboard shortcut in Blender's Preferences in the "Keymap" section: Search by name for "ndof" and look for "NDOF Object Transform"
 
+**Pro Tip:** In the 3DConnexion driver you can assign CTRL-SHIFT-M as a macro for Blender to one of the buttons on the SpaceMouse!
+
 
 ### Add-on Preferences
 
@@ -31,9 +33,10 @@ To disable translation or rotation, set the speed to zero.
 
 ### Contribute
 
-Ideas that need YOU:
-- **Transform all selected objects, not just the active one**
+Known issues and ideas that need YOU:
+- **UNDO** doesn't seem to always work correctly
+- **Transform all selected objects** - not just the active one
 - Detect older Blender versions with different APIs to access the NDOF motion data and make this add-on work with Blender 4.4 and maybe even down to 3.6 (?)
-- Turn this into an "extensions" for Blender 4+ instead of a legacy add-on
+- Turn this into an "extension" for Blender 4+ instead of a legacy add-on
 - Keep it working in the future with newer Blender/API versions
 
