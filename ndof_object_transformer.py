@@ -5,7 +5,7 @@
 bl_info = {
     "name": "NDOF Object Transformer",
     "author": "ChrisP",
-    "version": (1, 0),
+    "version": (1, 0, 1),
     "blender": (4, 5, 0),
     "location": "View3D",
     "description": "Tansform objects in the 3D viewport using NDOF device",
@@ -50,18 +50,29 @@ class NDOFObjectTransformer(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     _is_running = False
+    
 
     def modal(self, context, event):
-        obj = context.active_object
-
         if event.type == 'ESC':
             self.report({'INFO'}, "NDOF Transform cancelled")
             self.cancel(context)
             return {'CANCELLED'}
 
         if not self._is_running:
+            self.report({'INFO'}, "NDOF Transform cancelled: not running")
             self.cancel(context)
             return {'CANCELLED'}
+        
+        match context.mode:
+            case 'OBJECT':
+                obj = context.active_object
+            case 'POSE':
+                obj = context.active_pose_bone
+            case _:
+                self.cancel(context)
+                self.report({'INFO'}, "NDOF Transform cancelled: editor mode not implemented")
+                return {'CANCELLED'}
+        
 
         if event.type == 'NDOF_MOTION' and obj is not None:
             prefs = context.preferences.addons[__name__].preferences
@@ -79,6 +90,7 @@ class NDOFObjectTransformer(bpy.types.Operator):
             return {'RUNNING_MODAL'}
 
         return {'PASS_THROUGH'}
+
 
     def execute(self, context):
         if NDOFObjectTransformer._is_running:
@@ -105,6 +117,13 @@ def register():
     km = bpy.context.window_manager.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
     kmi = km.keymap_items.new(NDOFObjectTransformer.bl_idname, type='M', value='PRESS', ctrl=True, shift=True)
     addon_keymaps.append((km, kmi))
+
+    # Adding extra keymap inplace of Open Recent since Pose Mode CtrlShift+M is for mirror something
+    # this keymap will need to be removed by the user
+    km = bpy.context.window_manager.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
+    kmi = km.keymap_items.new(NDOFObjectTransformer.bl_idname, type='O', value='PRESS', ctrl=True, shift=True)
+    addon_keymaps.append((km, kmi))
+    
 
 def unregister():
     bpy.utils.unregister_class(NDOFObjectTransformer)
