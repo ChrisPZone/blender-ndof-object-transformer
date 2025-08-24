@@ -5,7 +5,7 @@
 bl_info = {
     "name": "NDOF Object Transformer",
     "author": "ChrisP",
-    "version": (1, 0, 2),
+    "version": (1, 1, 0),
     "blender": (4, 5, 0),
     "location": "View3D",
     "description": "Tansform objects in the 3D viewport using NDOF device",
@@ -15,49 +15,59 @@ bl_info = {
 
 import bpy
 
+
 def is_inv(value):
     if value:
         return 1
     else:
         return -1
 
+
 # Preferences
 class NDOFObjectTransformerPreferences(bpy.types.AddonPreferences):
     bl_idname = __name__
 
-    translation_speed: bpy.props.FloatProperty(
-        name="Translation Speed",
-        default=.03,
-        min=0,
-        max=0.5,
-        precision=2,
-        step=0.05
-    )
-    rotation_speed: bpy.props.FloatProperty(
-        name="Rotation Speed",
-        default=.07,
-        min=0,
-        max=0.5,
-        precision=2,
-        step=0.05
+    transform_mode: bpy.props.EnumProperty(
+        name="Transform Mode",
+        items=[
+            ("GLOBAL", "Global", "Transform on global axes. I.E. Push on X axis = Move on world coordinate X axis"),
+            ("VIEW", "View", "Transformations are relative to the viewport. I.E. Push forward = Move away from the viewport"),
+        ],
+        default="VIEW"
     )
 
+    translation_speed: bpy.props.FloatProperty(
+        name="Translation Speed",
+        default=.05,
+        min=0,
+        max=0.5,
+        precision=2,
+        step=0.01
+    )
     invert_translation_x: bpy.props.BoolProperty(
         name="Invert Translation X",
-        default=False
+        default=True
     )
     invert_translation_y: bpy.props.BoolProperty(
         name="Invert Translation Y",
-        default=True
+        default=False
     )
     invert_translation_z: bpy.props.BoolProperty(
         name="Invert Translation Z",
-        default=False
+        default=True
     )
 
+    rotation_speed: bpy.props.FloatProperty(
+        name="Rotation Speed",
+        default=.05,
+        min=0,
+        max=0.5,
+        precision=2,
+        step=0.01
+    )
     invert_rotation_x: bpy.props.BoolProperty(
         name="Invert Rotation X",
-        default=True
+        default=False
     )
     invert_rotation_y: bpy.props.BoolProperty(
         name="Invert Rotation Y",
@@ -65,31 +75,28 @@ class NDOFObjectTransformerPreferences(bpy.types.AddonPreferences):
     )
     invert_rotation_z: bpy.props.BoolProperty(
         name="Invert Rotation Z",
-        default=True
+        default=False
     )
-    
-    transform_mode: bpy.props.EnumProperty(
-        name="Transform Mode",
-        items=[
-            ("LITERAL", "Literal", "Transformations are literal to the controller. I.E. Push on X axis = Move X axis"),
-            ("VIEW", "View", "Transformations are relative to the viewport. I.E. Push forward = Move away from the viewport"),
-        ],
-        default="VIEW"
-    )
-    
+
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "translation_speed")
-        layout.prop(self, "rotation_speed")
-
-        layout.prop(self, "invert_translation_x")
-        layout.prop(self, "invert_translation_y")
-        layout.prop(self, "invert_translation_z")
-        layout.prop(self, "invert_rotation_x")
-        layout.prop(self, "invert_rotation_y")
-        layout.prop(self, "invert_rotation_z")
 
         layout.prop(self, "transform_mode")
+
+        layout.prop(self, "translation_speed")
+        itrow = layout.row(align=True)
+        itrow.label(text="Invert Translation")
+        itrow.prop(self, "invert_translation_x", text="X", toggle=True)
+        itrow.prop(self, "invert_translation_y", text="Y", toggle=True)
+        itrow.prop(self, "invert_translation_z", text="Z", toggle=True)
+
+        layout.prop(self, "rotation_speed")
+        irrow = layout.row(align=True)
+        irrow.label(text="Invert Rotation")
+        irrow.prop(self, "invert_rotation_x", text="X", toggle=True)
+        irrow.prop(self, "invert_rotation_y", text="Y", toggle=True)
+        irrow.prop(self, "invert_rotation_z", text="Z", toggle=True)
+
 
 
 # Modal Operator to transform the active object with the NDOF device
@@ -99,7 +106,7 @@ class NDOFObjectTransformer(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     _is_running = False
-    
+
 
     def modal(self, context, event):
         if event.type == 'ESC':
@@ -108,10 +115,10 @@ class NDOFObjectTransformer(bpy.types.Operator):
             return {'CANCELLED'}
 
         if not self._is_running:
-            self.report({'INFO'}, "NDOF Transform cancelled: not running")
+            self.report({'INFO'}, "NDOF Transform cancelled: Not running")
             self.cancel(context)
             return {'CANCELLED'}
-        
+
         match context.mode:
             case 'OBJECT':
                 obj = context.active_object
@@ -119,9 +126,9 @@ class NDOFObjectTransformer(bpy.types.Operator):
                 obj = context.active_pose_bone
             case _:
                 self.cancel(context)
-                self.report({'INFO'}, "NDOF Transform cancelled: editor mode not implemented")
+                self.report({'INFO'}, "NDOF Transform cancelled: Editor mode not implemented")
                 return {'CANCELLED'}
-        
+
 
         if event.type == 'NDOF_MOTION' and obj is not None:
             prefs = context.preferences.addons[__name__].preferences
@@ -129,7 +136,7 @@ class NDOFObjectTransformer(bpy.types.Operator):
             rx, ry, rz = event.ndof_motion.rotation
 
             match prefs.transform_mode:
-                case "LITERAL":
+                case "GLOBAL":
                     # Translate
                     obj.location.x += tx * prefs.translation_speed * is_inv(prefs.invert_translation_x)
                     obj.location.y += tz * prefs.translation_speed * is_inv(prefs.invert_translation_y)
@@ -158,13 +165,8 @@ class NDOFObjectTransformer(bpy.types.Operator):
                         orient_type='VIEW',
                     )
 
-
-                    
-
-
-                    
                 case _:
-                    self.report({'INFO'}, "NDOF Transform cancelled: transform mode not known!")
+                    self.report({'INFO'}, "NDOF Transform cancelled: Transform mode not known!")
             return {'RUNNING_MODAL'}
 
         return {'PASS_THROUGH'}
@@ -191,17 +193,10 @@ def register():
     bpy.utils.register_class(NDOFObjectTransformerPreferences)
     bpy.utils.register_class(NDOFObjectTransformer)
 
-    # Add shortcut: Ctrl+Shift+M in 3D View
+    # Add shortcut: Ctrl+Shift+F in 3D View
     km = bpy.context.window_manager.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
-    kmi = km.keymap_items.new(NDOFObjectTransformer.bl_idname, type='M', value='PRESS', ctrl=True, shift=True)
+    kmi = km.keymap_items.new(NDOFObjectTransformer.bl_idname, type='F', value='PRESS', ctrl=True, shift=True)
     addon_keymaps.append((km, kmi))
-
-    # Adding extra keymap inplace of Open Recent since Pose Mode CtrlShift+M is for mirror something
-    # this keymap will need to be removed by the user
-    km = bpy.context.window_manager.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
-    kmi = km.keymap_items.new(NDOFObjectTransformer.bl_idname, type='O', value='PRESS', ctrl=True, shift=True)
-    addon_keymaps.append((km, kmi))
-    
 
 def unregister():
     bpy.utils.unregister_class(NDOFObjectTransformer)
