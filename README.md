@@ -10,10 +10,12 @@ This video explains things: https://youtu.be/BqXvFh1Kp0w
 
 ## Installation
 
--   Download the ndof_object_transformer.py file
--   In Blender open Preferences > Add-ons
--   Use "Install from Disk" from the little dropdown in the top right corner of the Add-ons panel
--   and install the ndof_object_transformer.py file
+This add-on is a Blender Extension.
+
+-   Get the extension ZIP file (`ndof_object_transformer-<version>.zip`), or build it yourself (see below)
+-   Drag-and-drop the ZIP file into Blender, or open Preferences > Get Extensions and use "Install from Disk" from the little dropdown in the top right corner
+
+> **Upgrading from v1.1 or older:** Uninstall the old legacy add-on ("NDOF Object Transformer" in Preferences > Add-ons) first, so the two don't conflict.
 
 As long as the add-on is enabled, you can use the keyboard shortcut (`CTRL-SHIFT-F` by default) to enable/disable moving and rotating the active object in the 3D viewport.
 
@@ -40,20 +42,34 @@ You can change the keyboard shortcut in Blender's Preferences in the "Keymap" se
 
 | Model                           |  Mode  | T Speed | Invert T | R Speed | Invert R |
 | ------------------------------- | :----: | ------: | :------: | ------: | :------: |
-| 3DConnexion SpaceMouse Wireless |  View  |    0.05 |   X, Z   |    0.03 |  (none)  |
+| 3DConnexion SpaceMouse Wireless |  View  |    0.05 |   X, Z   |    0.03 |    Y     |
 | 3DConnexion SpaceMouse Wireless | Global |    0.05 |   X, Z   |    0.03 |    Y     |
 
 > Please submit your tested settings so we can include them in the table above and maybe even make some presets in the future!
+
+## Local Build & Install
+
+-   Build: `blender --command extension build`
+-   Install: Drag-and-drop the generated ZIP file into Blender
+-   Smoke test (headless): `blender -b --factory-startup --python-exit-code 1 --python tests/smoke_test.py`
 
 ## Contribute
 
 Known issues and ideas that need YOU:
 
--   Detect older Blender versions with different APIs to access the NDOF motion data and make this add-on work with Blender 4.4 and maybe even down to 3.6 (?)
--   Turn this into an "extension" for Blender 4+ instead of a legacy add-on
+-   Detect older Blender versions with different APIs to access the NDOF motion data and make this add-on work with Blender 4.4 and maybe even down to 4.2 (the oldest version supporting extensions)
 -   Keep it working in the future with newer Blender/API versions
 
 ## Change Log
+
+-   v1.2.0 @ 2026-11-18
+    -   Converted to a Blender Extension (`blender_manifest.toml`), replacing the legacy add-on
+    -   Each SpaceMouse gesture is now one undo step (Ctrl+Z works as expected)
+    -   "NDOF Transform" indicator in the 3D viewport while the mode is on
+    -   Global mode: rotation now works for quaternion/axis-angle rotation modes (pose bones!), respects transform locks and auto-keying, skips linked data
+    -   View mode follows the 3D viewport under the mouse pointer
+    -   Mode stays on in Edit/Sculpt/... (NDOF navigates the view there) instead of switching off
+    -   Fixed: toggle needing two presses after opening a file, double-speed motion after a quick off/on, mode stuck "on" after an error
 
 -   v1.1 @ 2025-08-24
     -   View Transform Mode, Invert axes, Pose bone (Contributor: @FuzzyExpress)
