@@ -62,7 +62,7 @@ Known issues and ideas that need YOU:
 
 ## Change Log
 
--   v1.2.0 @ 2026-11-18
+-   v1.3.0 @ 2026-11-18
     -   Converted to a Blender Extension (`blender_manifest.toml`), replacing the legacy add-on
     -   Each SpaceMouse gesture is now one undo step (Ctrl+Z works as expected)
     -   "NDOF Transform" indicator in the 3D viewport while the mode is on
